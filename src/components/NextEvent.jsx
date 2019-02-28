@@ -8,15 +8,30 @@ import Mozaik from 'mozaik/browser';
 
 
 function formatEventTimerange(event) {
-  var start, end, now, diff;
-  start = moment(event.start);
-  end = moment(event.end);
-  now = moment();
-  diff = start.diff(now);
-  if (diff < 0) {
-    return `Ends ${end.fromNow()}`;
-  } else {
-    return `${start.calendar()} - ${end.format('LT')}`;
+  if (event.start && event.end) {
+    var start, end, now, diff;
+    start = moment(event.start);
+    end = moment(event.end);
+    now = moment();
+    diff = start.diff(now);
+    if (diff < 0) {
+      return `Ends ${end.fromNow()}`;
+    } else {
+      let startFormatted;
+      if (start.isSame(end, 'day')) {
+        startFormatted = start.format('LT');
+      }
+      else {
+        startFormatted = start.format('LT DD/MM/YYYY ');
+      }
+
+      let endFormatted = end.format('LT DD/MM/YYYY');
+
+      return `${startFormatted} - ${endFormatted}`;
+    }
+  }
+  else {
+    return "";
   }
 };
 
@@ -27,6 +42,7 @@ class NextEvent extends Component {
   }
 
   getApiRequest() {
+    console.log('getApiRequest');
     // NOTE: Generating unique id from calendar names
     const calendarIds = this.props.calendars.map((calendar) => calendar.id);
     const id = `calendar.events.${cryptojs.MD5(calendarIds.join('-'))}`;
@@ -40,6 +56,7 @@ class NextEvent extends Component {
   }
 
   onApiData(events) {
+    console.log('onApiData');
     if (!events || events.length === 0) {
       console.warn('No calendar events');
       return;
@@ -60,6 +77,7 @@ class NextEvent extends Component {
   }
 
   render() {
+    console.log('render');
     let title = '';
     let timerange = '';
     let calendar = {};

@@ -1,5 +1,6 @@
 import Promise from 'bluebird';
-import googleapis from 'googleapis';
+//import googleapis from 'googleapis';
+const {google} = require('googleapis');
 import _ from 'lodash';
 import moment from 'moment';
 
@@ -10,29 +11,11 @@ import moment from 'moment';
 class Almanac {
 
   constructor(opts) {
-    // Log the authentication
-    const keyHeader = '-----BEGIN RSA PRIVATE KEY-----';
-    const keyIdentifier = opts.serviceKey.substr(opts.serviceKey.indexOf(keyHeader) + keyHeader.length, 10);
-    console.log('Authenticating calendar with', opts.serviceEmail, '/', keyIdentifier.replace(/\n/g, ''), '...');
-
-    this.gapi = googleapis.calendar('v3');
-    this.jwtClient = new googleapis.auth.JWT(
-      opts.serviceEmail, null, opts.serviceKey, [
-        'https://www.googleapis.com/auth/calendar.readonly'
-      ]
-    );
-  }
-
-  authorize() {
-    return new Promise((resolve, reject) => {
-      this.jwtClient.authorize((err, tokens) =>{
-        if (err) {
-          console.warn('Failed to authenticate');
-          return reject(err);
-        }
-        return resolve({ client: this.jwtClient, tokens: tokens });
-      });
+    this.auth = google.auth.getClient({
+        scopes: ['https://www.googleapis.com/auth/calendar.readonly']
     });
+
+    this.gapi = google.calendar('v3');
   }
 
   /**
@@ -46,6 +29,7 @@ class Almanac {
     var events;
 
     opts.duration = opts.duration || 7;
+    console.log('Read calendar')
 
     return new Promise((resolve, reject) => {
       if (!self.gapi || !self.gapi.events || self.gapi.events.length === 0) {
@@ -58,31 +42,58 @@ class Almanac {
         singleEvents: true,
         timeMin: moment().format(),
         timeMax: moment().add(opts.duration, 'days').format(),
-        auth: self.jwtClient
+        auth: self.auth
       }, (err, response) => {
-        if (err) {
-          reject(err);
-        }
-
-        if (!response.items || response.items.length === 0) {
-          console.warn('No items found with calendarId:', opts.calendar.id);
-          return resolve([]);
-        }
-
-        events = response.items.map((event) => {
-          return {
-            title: event.summary,
-            body: event.description,
+        if (!response) {
+          console.warn(`Calendar ${opts.calendar.id} cannot be read. Check settings`);
+          console.log('Error', err);
+          events = [{
+            title: "",
+            body: "Failed to read calendar.",
             calendar: {
               id: opts.calendar.id,
-              name: response.summary,
-              title: opts.calendar.title || response.summary
+              name: "",
+              title: opts.calendar.title
             },
-            location: event.location,
-            start: moment(event.start.dateTime).valueOf(),
-            end: moment(event.end.dateTime).valueOf()
-          };
-        });
+            location: "",
+            start: "",
+            end: ""
+          }];
+        }
+        else if (!response.items || response.items.length === 0) {
+          console.warn('No items found with calendarId:', opts.calendar.id);
+          console.log('Response', response);
+          events = [{
+            title: "",
+            body: "No upcoming events.",
+            calendar: {
+              id: opts.calendar.id,
+              name: "",
+              title: opts.calendar.title
+            },
+            location: "",
+            start: "",
+            end: ""
+          }];
+        }
+        else 
+        {
+          console.log("Valid response ", response.data.items)
+          events = response.data.items.map((event) => {
+            return {
+              title: event.summary,
+              body: event.description,
+              calendar: {
+                id: opts.calendar.id,
+                name: response.summary,
+                title: opts.calendar.title || response.summary
+              },
+              location: event.location,
+              start: moment(event.start.dateTime).valueOf(),
+              end: moment(event.end.dateTime).valueOf()
+            };
+          });
+        }
 
         resolve(events);
       });
@@ -96,6 +107,7 @@ class Almanac {
    * @return {Promise}     Promise that resolves with events
    */
   readMultipleCalendars(opts) {
+    console.log('readMultipleCalendars');
     const calendarPromises = opts.calendars.map((calendar) => {
       return this.readCalendar({ calendar: calendar });
     });

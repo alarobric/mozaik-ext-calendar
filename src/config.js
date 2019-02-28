@@ -13,6 +13,12 @@ const config = convict({
       default: null,
       format: String,
       env: 'GOOGLE_SERVICE_KEYPATH'
+    },
+    googleSubjectEmail: {
+      doc: 'An email to be impersonated to get access to resource calendars',
+      default: '',
+      format: String,
+      env: 'GOOGLE_SUBJECT_EMAIL'
     }
   }
 });
