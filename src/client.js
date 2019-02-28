@@ -6,8 +6,6 @@ import Almanac from './almanac';
 
 const client = mozaik => {
 
-  console.log('mozaik-ext-calendar 1');
-
   mozaik.loadApiConfig(config);
   var keyPath = path.normalize(config.get('calendar.googleServiceKeypath'));
 
@@ -27,8 +25,6 @@ const client = mozaik => {
     subjectEmail: config.get('calendar.googleSubjectEmail'),
   });
 
-  console.log('mozaik-ext-calendar');
-
   const apiCalls = {
     events: (params) => {
 
@@ -36,7 +32,6 @@ const client = mozaik => {
       //.then(() => {
         //return almanac.readMultipleCalendars({ calendars: params.calendars });
       //})
-      console.log('apiCalls');
       return almanac.readMultipleCalendars({ calendars: params.calendars })
       .then((events) => {
         return Promise.resolve(events);

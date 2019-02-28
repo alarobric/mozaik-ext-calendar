@@ -29,7 +29,6 @@ class List extends Component {
   }
 
   getApiRequest() {
-    console.log('getApiRequest');
     // NOTE: Generating unique id from calendar names
     const calendarIds = this.props.calendars.map((calendar) => calendar.id);
     const id = `calendar.events.${cryptojs.MD5(calendarIds.join('-'))}`;
@@ -43,7 +42,6 @@ class List extends Component {
   }
 
   onApiData(events) {
-    console.log('onApiData');
     if (!events || events.length === 0) {
       console.warn('No calendar events');
       return;
@@ -57,7 +55,6 @@ class List extends Component {
   }
 
   render() {
-    console.log('render');
     //console.log('Events', this.state.events);
     const listItems = _.chain(this.state.events)
       .sortBy('time')
